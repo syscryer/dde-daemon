@@ -145,9 +145,9 @@ func (obj *Manager) DeleteCustomShortcut(id int32) {
 	obj.deleteCustomShortcut(id)
 }
 
-func (obj *Manager) GrabSignalShortcut(shortcut, action string, isGrab bool) {
-	grabSignalShortcut(shortcut, action, isGrab)
-}
+//func (obj *Manager) GrabSignalShortcut(shortcut, action string, isGrab bool) {
+//grabSignalShortcut(shortcut, action, isGrab)
+//}
 
 func (obj *Manager) GrabKbdAndMouse() {
 	go grabKeyboardAndMouse()

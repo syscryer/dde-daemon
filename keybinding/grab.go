@@ -21,11 +21,6 @@
 
 package keybinding
 
-// #cgo pkg-config: x11 xtst glib-2.0
-// #include "record.h"
-// #include <stdlib.h>
-import "C"
-
 import (
 	"github.com/BurntSushi/xgb/xproto"
 	"github.com/BurntSushi/xgbutil"
@@ -33,165 +28,7 @@ import (
 	"github.com/BurntSushi/xgbutil/mousebind"
 	"github.com/BurntSushi/xgbutil/xevent"
 	"strings"
-	"unsafe"
 )
-
-func convertKeyToMod(key string) string {
-	if v, ok := keyToModMap[key]; ok {
-		return v
-	}
-
-	return key
-}
-
-func convertModToKey(mod string) string {
-	if v, ok := modToKeyMap[mod]; ok {
-		return v
-	}
-
-	return mod
-}
-
-func convertKeysToMods(keys string) string {
-	array := strings.Split(keys, "-")
-	ret := ""
-	for i, v := range array {
-		if i != 0 {
-			ret += "-"
-		}
-		tmp := convertKeyToMod(v)
-		ret += tmp
-	}
-
-	return ret
-}
-
-func convertModsToKeys(mods string) string {
-	array := strings.Split(mods, "-")
-	ret := ""
-	for i, v := range array {
-		if i != 0 {
-			ret += "-"
-		}
-		tmp := convertModToKey(v)
-		ret += tmp
-	}
-
-	return ret
-}
-
-/**
- * Input: <control><alt>t
- * Output: modx-modx-t
- */
-func formatXGBShortcut(shortcut string) string {
-	if len(shortcut) < 1 {
-		return ""
-	}
-
-	ret := formatShortcut(shortcut)
-	return convertKeysToMods(ret)
-}
-
-/**
- * Input: <control><alt>t
- * Output: control-alt-t
- */
-func formatShortcut(shortcut string) string {
-	l := len(shortcut)
-	if l < 1 {
-		logger.Warning("formatShortcut args error")
-		return ""
-	}
-
-	str := strings.ToLower(shortcut)
-	ret := ""
-	flag := false
-	start := 0
-	end := 0
-
-	for i, ch := range str {
-		if ch == '<' {
-			flag = true
-			start = i
-			continue
-		}
-
-		if ch == '>' && flag {
-			end = i
-			flag = false
-
-			for j := start + 1; j < end; j++ {
-				ret += string(str[j])
-			}
-			ret += "-"
-			continue
-		}
-
-		if !flag {
-			ret += string(ch)
-		}
-	}
-
-	// parse 'primary' to 'control'
-	array := strings.Split(ret, "-")
-	ret = ""
-	for i, v := range array {
-		if v == "primary" || v == "control" {
-			// multi control
-			if !strings.Contains(ret, "control") {
-				if i != 0 {
-					ret += "-"
-				}
-				ret += "control"
-			}
-			continue
-		}
-
-		if i != 0 {
-			ret += "-"
-		}
-		ret += v
-	}
-
-	return ret
-}
-
-/**
- * delete Num_Lock and Caps_Lock
- */
-func deleteSpecialMod(modStr string) string {
-	if !strings.Contains(modStr, "-") {
-		if modStr == "lock" || modStr == "mod2" {
-			return ""
-		}
-
-		return modStr
-	}
-
-	ret := ""
-	strs := strings.Split(modStr, "-")
-	l := len(strs)
-	for i, s := range strs {
-		if s == "lock" || s == "mod2" {
-			continue
-		}
-
-		if i == l-1 {
-			ret += s
-			break
-		}
-		ret += s + "-"
-	}
-
-	if length := len(ret); length > 1 {
-		if ret[length-1] == '-' {
-			ret = ret[0 : length-1]
-		}
-	}
-
-	return ret
-}
 
 func getSystemKeyPairs() map[string]string {
 	systemPairs := make(map[string]string)
@@ -245,14 +82,12 @@ func grabKeyPress(wid xproto.Window, shortcut string) bool {
 		return false
 	}
 
-	if len(keys) < 1 {
-		logger.Warningf("'%s' no details", shortcut)
-		return false
-	}
-
-	if err = keybind.GrabChecked(X, wid, mod, keys[0]); err != nil {
-		logger.Warningf("Grab '%s' failed: %v", shortcut, err)
-		return false
+	for _, k := range keys {
+		if err := keybind.GrabChecked(X, wid, mod, k); err != nil {
+			logger.Warning("GrabChecked failed:", err)
+			ungrabKey(wid, shortcut)
+			return false
+		}
 	}
 
 	return true
@@ -270,12 +105,9 @@ func ungrabKey(wid xproto.Window, shortcut string) bool {
 		return false
 	}
 
-	if len(keys) < 1 {
-		logger.Warningf("'%s' no details", shortcut)
-		return false
+	for _, k := range keys {
+		keybind.Ungrab(X, wid, mod, k)
 	}
-
-	keybind.Ungrab(X, wid, mod, keys[0])
 
 	return true
 }
@@ -286,9 +118,41 @@ func grabKeyPairs(pairs map[string]string, isGrab bool) {
 			continue
 		}
 
+		logger.Infof("Grab key pair: %v --- %v", k, v)
 		if strings.ToLower(k) == "super" {
-			grabSignalShortcut("Super_L", v, isGrab)
-			grabSignalShortcut("Super_R", v, isGrab)
+			if isGrab {
+				keyInfo, ok := newKeycodeInfo("Super_L")
+				if !ok {
+					continue
+				}
+				if grabKeyPress(X.RootWin(), "Super_L") {
+					grabKeyBindsMap[keyInfo] = v
+				}
+
+				keyInfo, ok = newKeycodeInfo("Super_R")
+				if !ok {
+					continue
+				}
+				if grabKeyPress(X.RootWin(), "Super_R") {
+					grabKeyBindsMap[keyInfo] = v
+				}
+			} else {
+				keyInfo, ok := newKeycodeInfo("Super_L")
+				if !ok {
+					continue
+				}
+				if ungrabKey(X.RootWin(), "Super_L") {
+					delete(grabKeyBindsMap, keyInfo)
+				}
+
+				keyInfo, ok = newKeycodeInfo("Super_R")
+				if !ok {
+					continue
+				}
+				if ungrabKey(X.RootWin(), "Super_R") {
+					delete(grabKeyBindsMap, keyInfo)
+				}
+			}
 			continue
 		}
 
@@ -319,8 +183,9 @@ func grabMediaKeys() {
 	}
 }
 
+var keyPressStr string
+
 func grabKeyboardAndMouse() {
-	//go func() {
 	X, err := xgbutil.NewConn()
 	if err != nil {
 		logger.Info("Get New Connection Failed:", err)
@@ -349,21 +214,20 @@ func grabKeyboardAndMouse() {
 	xevent.KeyPressFun(
 		func(X *xgbutil.XUtil, e xevent.KeyPressEvent) {
 			value := parseKeyEnvent(X, e.State, e.Detail)
+			keyPressStr = value
 			GetManager().KeyPressEvent(value)
 		}).Connect(X, X.RootWin())
 
 	xevent.KeyReleaseFun(
 		func(X *xgbutil.XUtil, e xevent.KeyReleaseEvent) {
-			value := parseKeyEnvent(X, e.State, e.Detail)
-			GetManager().KeyReleaseEvent(value)
+			GetManager().KeyReleaseEvent(keyPressStr)
+			keyPressStr = ""
 			ungrabAllMouseButton(X)
 			keybind.UngrabKeyboard(X)
-			logger.Infof("Key: %s\n", value)
 			xevent.Quit(X)
 		}).Connect(X, X.RootWin())
 
 	xevent.Main(X)
-	//}()
 }
 
 func grabAllMouseButton(X *xgbutil.XUtil) {
@@ -378,100 +242,27 @@ func ungrabAllMouseButton(X *xgbutil.XUtil) {
 	mousebind.Ungrab(X, X.RootWin(), 0, 3)
 }
 
-func grabSignalShortcut(shortcut, action string, isGrab bool) {
-	if len(shortcut) < 1 {
-		logger.Error("grabSignalKey args error")
-		return
-	}
-
-	mod, keys, err := keybind.ParseString(X, shortcut)
-	if err != nil {
-		logger.Errorf("ParseString error: %v", err)
-		return
-	}
-
-	if mod > 0 || len(keys) < 1 {
-		return
-	}
-
-	if isGrab {
-		if len(action) < 1 {
-			return
-		}
-		tmp := C.CString(action)
-		defer C.free(unsafe.Pointer(tmp))
-		C.grab_xrecord_key(C.int(keys[0]), tmp)
-	} else {
-		C.ungrab_xrecord_key(C.int(keys[0]))
-	}
-}
-
-func ungrabSignalShortcut(shortcut string) {
-	if len(shortcut) < 1 {
-		return
-	}
-
-	mod, keys, err := keybind.ParseString(X, shortcut)
-	if err != nil {
-		logger.Errorf("ParseString error: %v", err)
-		return
-	}
-
-	if mod > 0 || len(keys) < 1 {
-		return
-	}
-
-	C.ungrab_xrecord_key(C.int(keys[0]))
-}
-
-func initXRecord() {
-	C.grab_xrecord_init()
-}
-
-func stopXRecord() {
-	C.grab_xrecord_finalize()
-}
-
 func parseKeyEnvent(X *xgbutil.XUtil, state uint16, detail xproto.Keycode) string {
 	modStr := keybind.ModifierString(state)
-	keyStr := strings.ToLower(
-		keybind.LookupString(X,
-			state, detail))
+	keyStr := keybind.LookupString(X, state, detail)
 
 	if detail == 65 {
-		keyStr = "space"
+		keyStr = "Space"
 	}
 
-	if keyStr == "l1" {
-		keyStr = "f11"
+	if keyStr == "L1" {
+		keyStr = "F11"
 	}
 
-	if keyStr == "l2" {
-		keyStr = "f12"
+	if keyStr == "L2" {
+		keyStr = "F12"
 	}
 
 	value := ""
 	modStr = deleteSpecialMod(modStr)
 
-	keyStr = parseModifierKey(modStr, keyStr)
-	logger.Infof("modStr: %s, keyStr: %s", modStr, keyStr)
-
 	if len(modStr) > 0 {
-		if strings.ToLower(keyStr) == "super" &&
-			strings.ToLower(modStr) == "mod4" {
-			value = keyStr
-		} else if strings.ToLower(keyStr) == "alt" &&
-			strings.ToLower(modStr) == "mod1" {
-			value = "alt"
-		} else if strings.ToLower(keyStr) == "control" &&
-			strings.ToLower(modStr) == "control" {
-			value = "control"
-		} else if strings.ToLower(keyStr) == "shift" &&
-			strings.ToLower(modStr) == "shift" {
-			value = "shift"
-		} else {
-			value = convertModsToKeys(modStr) + "-" + keyStr
-		}
+		value = convertModsToKeys(modStr) + "-" + keyStr
 	} else {
 		value = keyStr
 	}

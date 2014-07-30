@@ -51,7 +51,7 @@ func StartKeyBinding() {
 		panic(err)
 	}
 	keybind.Initialize(X)
-	initXRecord()
+	//initXRecord()
 
 	initSystemIdDescList()
 	//initMediaIdDescList()
@@ -84,7 +84,7 @@ func Start() {
 func Stop() {
 	logger.EndTracing()
 
-	stopXRecord()
+	//stopXRecord()
 	xevent.Quit(X)
 	dbus.UnInstallObject(GetManager())
 }

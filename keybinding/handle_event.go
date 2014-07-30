@@ -203,23 +203,15 @@ func (obj *Manager) listenKeyEvents() {
 			}
 			logger.Infof("KeyStr: %s, modStr: %s", keyStr, modStr)
 			if !GetMediaManager().emitMediaSignal(modStr, keyStr, true) {
-				modStr = deleteSpecialMod(modStr)
 				value := ""
-				if len(modStr) < 1 {
-					value = keyStr
-				} else {
+				modStr = deleteSpecialMod(modStr)
+				if len(modStr) > 1 {
 					value = modStr + "-" + keyStr
+				} else {
+					value = keyStr
 				}
+				keyPressStr = value
 
-				info, ok := newKeycodeInfo(value)
-				if !ok {
-					return
-				}
-
-				if v, ok := getExecCommand(info); ok {
-					// 不然按键会阻塞，直到程序推出
-					go doAction(v)
-				}
 			}
 		}).Connect(X, X.RootWin())
 
@@ -230,8 +222,18 @@ func (obj *Manager) listenKeyEvents() {
 			if e.Detail == 65 {
 				keyStr = "space"
 			}
-			//modStr = deleteSpecialMod(modStr)
-			GetMediaManager().emitMediaSignal(modStr, keyStr, false)
+			if !GetMediaManager().emitMediaSignal(modStr, keyStr, true) {
+				info, ok := newKeycodeInfo(keyPressStr)
+				keyPressStr = ""
+				if !ok {
+					return
+				}
+
+				if v, ok := getExecCommand(info); ok {
+					// 不然按键会阻塞，直到程序推出
+					go doAction(v)
+				}
+			}
 		}).Connect(X, X.RootWin())
 }
 

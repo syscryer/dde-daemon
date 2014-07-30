@@ -245,19 +245,24 @@ func isValidShortcut(shortcut string) bool {
 	if strings.Contains(tmp, "-") {
 		as := strings.Split(tmp, "-")
 		l := len(as)
-		str := as[l-1]
+		str := strings.ToLower(as[l-1])
 		// 修饰键作为单按键的情况
-		if strings.Contains(str, "alt") ||
-			strings.Contains(str, "shift") ||
-			strings.Contains(str, "control") ||
-			(l-1 != 0 && strings.Contains(str, "super")) {
+		//if strings.Contains(str, "alt") ||
+		//strings.Contains(str, "shift") ||
+		//strings.Contains(str, "control") ||
+		//(l-1 != 0 && strings.Contains(str, "super")) {
+		if strings.Contains(str, "caps") ||
+			strings.Contains(str, "num") ||
+			strings.Contains(str, "tab") ||
+			strings.Contains(str, "esc") ||
+			strings.Contains(str, "fn") {
 			return false
 		} else {
 			return true
 		}
 	}
 
-	switch tmp {
+	switch strings.ToLower(tmp) {
 	case "f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "f10", "f11", "f12", "print", "super_l", "super_r", "super":
 		return true
 	}
