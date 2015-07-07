@@ -246,29 +246,28 @@ func checkSetting8021xValues(data connectionData) (errs sectionErrors) {
 		if isSettingRequireSecret(getSetting8021xPasswordFlags(data)) {
 			ensureSetting8021xPasswordNoEmpty(data, errs)
 		}
+		ensureSetting8021xSystemCaCertsNoEmpty(data, errs)
 	case "leap":
 		ensureSetting8021xIdentityNoEmpty(data, errs)
 		if isSettingRequireSecret(getSetting8021xPasswordFlags(data)) {
 			ensureSetting8021xPasswordNoEmpty(data, errs)
 		}
+		ensureSetting8021xSystemCaCertsNoEmpty(data, errs)
 	case "fast":
 		ensureSetting8021xPhase2AuthNoEmpty(data, errs)
 		ensureSetting8021xIdentityNoEmpty(data, errs)
-		ensureSetting8021xSystemCaCertsNoEmpty(data, errs)
 		if isSettingRequireSecret(getSetting8021xPasswordFlags(data)) {
 			ensureSetting8021xPasswordNoEmpty(data, errs)
 		}
 	case "ttls":
 		ensureSetting8021xPhase2AuthNoEmpty(data, errs)
 		ensureSetting8021xIdentityNoEmpty(data, errs)
-		ensureSetting8021xSystemCaCertsNoEmpty(data, errs)
 		if isSettingRequireSecret(getSetting8021xPasswordFlags(data)) {
 			ensureSetting8021xPasswordNoEmpty(data, errs)
 		}
 	case "peap":
 		ensureSetting8021xPhase2AuthNoEmpty(data, errs)
 		ensureSetting8021xIdentityNoEmpty(data, errs)
-		ensureSetting8021xSystemCaCertsNoEmpty(data, errs)
 		if isSettingRequireSecret(getSetting8021xPasswordFlags(data)) {
 			ensureSetting8021xPasswordNoEmpty(data, errs)
 		}
@@ -373,11 +372,9 @@ func logicSetSetting8021xEap(data connectionData, value []string) (err error) {
 			NM_SETTING_802_1X_PHASE1_FAST_PROVISIONING,
 			NM_SETTING_802_1X_PHASE2_AUTH,
 			NM_SETTING_802_1X_PASSWORD,
-			NM_SETTING_802_1X_PASSWORD_FLAGS,
-			NM_SETTING_802_1X_SYSTEM_CA_CERTS)
+			NM_SETTING_802_1X_PASSWORD_FLAGS)
 		setSetting8021xPhase1FastProvisioning(data, "1")
 		setSetting8021xPhase2Auth(data, "gtc")
-		setSetting8021xSystemCaCerts(data, true)
 		setSetting8021xPasswordFlags(data, NM_SETTING_SECRET_FLAG_NONE)
 	case "ttls":
 		removeSettingKeyBut(data, section8021x,
@@ -387,10 +384,8 @@ func logicSetSetting8021xEap(data connectionData, value []string) (err error) {
 			NM_SETTING_802_1X_CA_CERT,
 			NM_SETTING_802_1X_PHASE2_AUTH,
 			NM_SETTING_802_1X_PASSWORD,
-			NM_SETTING_802_1X_PASSWORD_FLAGS,
-			NM_SETTING_802_1X_SYSTEM_CA_CERTS)
+			NM_SETTING_802_1X_PASSWORD_FLAGS)
 		setSetting8021xPhase2Auth(data, "pap")
-		setSetting8021xSystemCaCerts(data, true)
 		setSetting8021xPasswordFlags(data, NM_SETTING_SECRET_FLAG_NONE)
 	case "peap":
 		removeSettingKeyBut(data, section8021x,
@@ -401,11 +396,9 @@ func logicSetSetting8021xEap(data connectionData, value []string) (err error) {
 			NM_SETTING_802_1X_PHASE1_PEAPVER,
 			NM_SETTING_802_1X_PHASE2_AUTH,
 			NM_SETTING_802_1X_PASSWORD,
-			NM_SETTING_802_1X_PASSWORD_FLAGS,
-			NM_SETTING_802_1X_SYSTEM_CA_CERTS)
+			NM_SETTING_802_1X_PASSWORD_FLAGS)
 		removeSetting8021xPhase1Peapver(data)
 		setSetting8021xPhase2Auth(data, "mschapv2")
-		setSetting8021xSystemCaCerts(data, true)
 		setSetting8021xPasswordFlags(data, NM_SETTING_SECRET_FLAG_NONE)
 	}
 	setSetting8021xEap(data, value)
