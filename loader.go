@@ -51,7 +51,7 @@ func Register(newModule *Module) {
 		logger.Error("can't register an incomplete module " + newModule.Name)
 		return
 	}
-	modules = append([]*Module{newModule}, modules...)
+	modules = append(modules, newModule)
 }
 
 func Start() {
