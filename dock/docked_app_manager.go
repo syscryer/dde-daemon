@@ -136,7 +136,7 @@ type dockedItemInfo struct {
 func (m *DockedAppManager) Dock(id, title, icon, cmd string) bool {
 	idElement := m.findItem(id)
 	if idElement != nil {
-		logger.Info(id, "is already docked.")
+		logger.Debug(id, "is already docked.")
 		return false
 	}
 
@@ -173,8 +173,8 @@ func (m *DockedAppManager) doUndock(id string) bool {
 		return false
 	}
 
-	logger.Info("Undock", id)
-	logger.Info("Remove", m.items.Remove(removeItem))
+	logger.Debug("Undock", id)
+	logger.Debug("Remove", m.items.Remove(removeItem))
 	m.core.SetStrv(DockedApps, m.toSlice())
 	gio.SettingsSync()
 	os.Remove(filepath.Join(scratchDir, id+".desktop"))
@@ -222,14 +222,14 @@ func (m *DockedAppManager) findItem(id string) *list.Element {
 }
 
 func (m *DockedAppManager) Sort(items []string) {
-	logger.Info("sort:", items)
+	logger.Debug("sort:", items)
 	for _, item := range items {
 		if i := m.findItem(item); i != nil {
 			m.items.PushBack(m.items.Remove(i))
 		}
 	}
 	l := m.toSlice()
-	logger.Info("sorted:", l)
+	logger.Debug("sorted:", l)
 	m.core.SetStrv(DockedApps, l)
 	gio.SettingsSync()
 }

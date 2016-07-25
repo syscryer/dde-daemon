@@ -43,10 +43,13 @@ func (wa *fullScreenWorkaround) detectTarget(w xproto.Window) {
 
 	if wa.isFullScreen(w) {
 		for _, target := range wa.targets {
-			if strings.Contains(string(contents), target) {
-				wa.inhibit(target, string(contents))
-				return
+			if !strings.Contains(string(contents), target) {
+				continue
 			}
+			if !wa.isHintingTarget {
+				wa.inhibit(target, string(contents))
+			}
+			return
 		}
 	}
 	wa.isHintingTarget = false

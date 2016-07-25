@@ -26,13 +26,17 @@ import (
 	"time"
 )
 
+const (
+	maxFailedNumber = 10
+)
+
 var (
 	logger = log.NewLogger("dde-daemon/sessionwatcher")
 )
 
 type Manager struct {
 	dock      *Dock
-	appelt    *DockApplet
+	applet    *DockApplet
 	exitTimer chan struct{}
 }
 
@@ -40,7 +44,7 @@ func NewManager() *Manager {
 	m := &Manager{}
 
 	m.dock = NewDock()
-	m.appelt = NewDockApplet()
+	m.applet = NewDockApplet()
 	m.exitTimer = make(chan struct{})
 
 	return m
@@ -55,8 +59,16 @@ func (m *Manager) startTimer() {
 		timer := time.NewTimer(time.Second * 5)
 		select {
 		case <-timer.C:
-			go m.appelt.restartDockApplet()
-			go m.dock.restartDock()
+			if m.applet.failedCount >= maxFailedNumber &&
+				m.dock.failedCount >= maxFailedNumber {
+				return
+			}
+			if m.applet.failedCount < maxFailedNumber {
+				go m.applet.restartDockApplet()
+			}
+			if m.dock.failedCount < maxFailedNumber {
+				go m.dock.restartDock()
+			}
 		case <-m.exitTimer:
 			return
 		}

@@ -311,7 +311,8 @@ func NewManager() *Manager {
 	m.listenSignalChanged()
 	m.quitFlag = make(chan struct{})
 
-	go m.refrashDiskInfoList()
+	// disable disk refreash
+	//go m.refrashDiskInfoList()
 
 	return m
 }

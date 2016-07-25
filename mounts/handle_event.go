@@ -54,7 +54,11 @@ func (m *Manager) refrashDiskInfoList() {
 }
 
 func (m *Manager) endDiskrefrash() {
+	if m.quitFlag == nil {
+		return
+	}
 	close(m.quitFlag)
+	m.quitFlag = nil
 }
 
 func (m *Manager) listenSignalChanged() {

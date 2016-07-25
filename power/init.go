@@ -115,6 +115,11 @@ func Start() {
 		return
 	}
 
+	if (power.OnBattery && power.BatteryIdleDelay == 0 && power.BatterySuspendDelay == 0) ||
+		(power.LinePowerIdleDelay == 0 && power.LinePowerSuspendDelay == 0) {
+		workaround = nil
+		return
+	}
 	workaround = newFullScreenWorkaround()
 	go workaround.start()
 }

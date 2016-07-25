@@ -249,7 +249,7 @@ func (m *TrayManager) tryOwner() bool {
 	}
 
 	//owner the _NET_SYSTEM_TRAY_Sn
-	logger.Info("Required _NET_SYSTEM_TRAY_S0 successful")
+	logger.Debug("Required _NET_SYSTEM_TRAY_S0 successful")
 
 	m.RequireManageTrayIcons()
 

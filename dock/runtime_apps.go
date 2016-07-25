@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"dbus/com/deepin/daemon/dock"
 	"encoding/base64"
-	"fmt"
 	"github.com/BurntSushi/xgb/xproto"
 	"github.com/BurntSushi/xgbutil"
 	"github.com/BurntSushi/xgbutil/ewmh"
@@ -22,6 +21,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 )
 
 var DOCKED_APP_MANAGER *dock.DockedAppManager
@@ -55,6 +55,23 @@ type RuntimeApp struct {
 
 	updateConfigureTimer *time.Timer
 	updateWMNameTimer    *time.Timer
+}
+
+func (app *RuntimeApp) updateWMName(xid xproto.Window) {
+	app.cancelUpdateWMName()
+	app.updateWMNameTimer = time.AfterFunc(time.Millisecond*20, func() {
+		app.updateWmName(xid)
+		app.updateAppid(xid)
+		app.notifyChanged()
+		app.updateWMNameTimer = nil
+	})
+}
+
+func (app *RuntimeApp) cancelUpdateWMName() {
+	if app.updateWMNameTimer != nil {
+		app.updateWMNameTimer.Stop()
+		app.updateWMNameTimer = nil
+	}
 }
 
 func (app *RuntimeApp) createDesktopAppInfo() *DesktopAppInfo {
@@ -378,13 +395,20 @@ func find_app_id_by_xid(xid xproto.Window, displayMode DisplayModeType) string {
 	wmClass, _ := icccm.WmClassGet(XU, xid)
 	var wmInstance, wmClassName string
 	if wmClass != nil {
-		wmInstance = wmClass.Instance
-		wmClassName = wmClass.Class
+		if utf8.ValidString(wmClass.Instance) {
+			wmInstance = wmClass.Instance
+		}
+		// it is possible that getting invalid string which might be xgb implementation's bug.
+		// for instance: xdemineur's WMClass
+		if utf8.ValidString(wmClass.Class) {
+			wmClassName = wmClass.Class
+		}
+		logger.Debug("WMClass", wmClassName, ", WMInstance", wmInstance)
 	}
 	name, _ := ewmh.WmNameGet(XU, xid)
 	pid, err := ewmh.WmPidGet(XU, xid)
 	if err != nil {
-		logger.Info("get pid failed, ", name)
+		logger.Debug("get pid failed, ", name)
 		if name != "" {
 			pid = lookthroughProc(name)
 		} else {
@@ -524,7 +548,7 @@ func (app *RuntimeApp) updateIcon(xid xproto.Window) {
 		}
 	}
 
-	logger.Info(app.Id, "using icon from X")
+	logger.Debug(app.Id, "using icon from X")
 	icon, err := xgraphics.FindIcon(XU, xid, 48, 48)
 	// logger.Info(icon, err)
 	// FIXME: gets empty icon for minecraft
@@ -546,14 +570,27 @@ func (app *RuntimeApp) updateIcon(xid xproto.Window) {
 
 }
 func (app *RuntimeApp) updateWmName(xid xproto.Window) {
-	if name, err := ewmh.WmNameGet(XU, xid); err == nil && name != "" {
-		app.xids[xid].Title = name
+	if _, ok := app.xids[xid]; !ok {
 		return
+	}
+
+	if name, err := ewmh.WmNameGet(XU, xid); err == nil && name != "" {
+		if utf8.ValidString(name) {
+			app.xids[xid].Title = name
+			return
+		}
 	}
 
 	if name, err := xprop.PropValStr(xprop.GetProperty(XU, xid,
 		"WM_NAME")); err == nil {
-		app.xids[xid].Title = name
+		if utf8.ValidString(name) {
+			app.xids[xid].Title = name
+			return
+		}
+	}
+
+	if app.xids[xid].Title == "" {
+		app.xids[xid].Title = app.Id
 	}
 }
 
@@ -599,7 +636,7 @@ func (app *RuntimeApp) updateAppid(xid xproto.Window) {
 		if newApp := ENTRY_MANAGER.createRuntimeApp(xid); newApp != nil {
 			newApp.attachXid(xid)
 		}
-		fmt.Println("APP:", app.Id, "Changed to..", newAppId)
+		logger.Debug("APP:", app.Id, "Changed to..", newAppId)
 		//TODO: Destroy
 	}
 }
@@ -746,10 +783,7 @@ func (app *RuntimeApp) attachXid(xid xproto.Window) {
 				app.updateWMNameTimer = nil
 			}
 			app.updateWMNameTimer = time.AfterFunc(time.Millisecond*20, func() {
-				app.updateWmName(xid)
-				app.updateAppid(xid)
-				app.notifyChanged()
-				app.updateWMNameTimer = nil
+				app.updateWMName(xid)
 			})
 		case ATOM_WINDOW_STATE:
 			logger.Debugf("%s(0x%x) WM_STATE is changed", app.Id, xid)

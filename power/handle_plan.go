@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/BurntSushi/xgb"
 	"github.com/BurntSushi/xgb/dpms"
+	"sync"
 	"time"
 )
 
@@ -136,7 +137,12 @@ func (p *Power) updateIdletimer() {
 	}
 }
 
+var planInfoLocker sync.Mutex
+
 func (p *Power) updatePlanInfo() {
+	planInfoLocker.Lock()
+	defer planInfoLocker.Unlock()
+
 	acDelay := p.coreSettings.GetInt("ac-idle-delay")
 	acSuspend := p.coreSettings.GetInt("ac-suspend-delay")
 	batteryDelay := p.coreSettings.GetInt("battery-idle-delay")
@@ -151,6 +157,20 @@ func (p *Power) updatePlanInfo() {
 		BlancedIdleTime, BlancedSuspendTime, HighPerformanceIdleTime, HighPerformanceSuspendTime,
 	)
 	p.setPropPlanInfo(info)
+
+	// disable fullscreen workaround if no black && no suspend
+	if (p.OnBattery && batteryDelay == 0 && batterySuspend == 0) ||
+		(acDelay == 0 && acSuspend == 0) {
+		if workaround != nil {
+			workaround.stop()
+			workaround = nil
+		}
+	} else {
+		if workaround == nil {
+			workaround = newFullScreenWorkaround()
+			go workaround.start()
+		}
+	}
 }
 
 var dpmsOn func()

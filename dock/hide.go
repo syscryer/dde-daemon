@@ -74,7 +74,7 @@ func (m *HideStateManager) SetState(s int32) int32 {
 	state := HideStateType(s)
 	logger.Debug("SetState m.state:", m.state, "new state:", state)
 	if m.state == state {
-		logger.Info("New HideState is the same as the old:", state)
+		logger.Debug("New HideState is the same as the old:", state)
 		return s
 	}
 
@@ -85,7 +85,7 @@ func (m *HideStateManager) SetState(s int32) int32 {
 
 func (m *HideStateManager) UpdateState() {
 	if m.toggleShowTimer != nil && !isLauncherShown {
-		logger.Info("in ToggleShow")
+		logger.Debug("in ToggleShow")
 		return
 	}
 	trigger := TriggerShow
@@ -151,7 +151,7 @@ func (m *HideStateManager) UpdateState() {
 
 	if isLauncherShown {
 		m.CancelToggleShow()
-		logger.Info("launcher is opend, show dock")
+		logger.Debug("launcher is opend, show dock")
 		trigger = TriggerShow
 	}
 
@@ -163,7 +163,7 @@ func (m *HideStateManager) UpdateState() {
 
 func (m *HideStateManager) CancelToggleShow() {
 	if m.toggleShowTimer != nil {
-		logger.Info("Cancel ToggleShow")
+		logger.Debug("Cancel ToggleShow")
 		m.cleanToggleShowChan <- true
 		m.toggleShowTimer = nil
 	}

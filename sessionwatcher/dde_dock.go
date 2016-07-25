@@ -23,6 +23,7 @@ package sessionwatcher
 
 import (
 	"os/exec"
+	"time"
 )
 
 const (
@@ -30,7 +31,10 @@ const (
 	_DDE_DOCK_CMD    = "/usr/bin/dde-dock"
 )
 
-type Dock struct{}
+type Dock struct{
+	failedCount int
+	prevTime int64
+}
 
 func NewDock() *Dock {
 	dock := &Dock{}
@@ -49,6 +53,13 @@ func (dock *Dock) restartDock() {
 
 	if err := exec.Command(_DDE_DOCK_CMD, "").Run(); err != nil {
 		logger.Warning("launch dde-dock failed:", err)
+		nowTime := time.Now().Unix()
+		if nowTime - dock.prevTime < 6 {
+			dock.failedCount += 1
+		} else {
+			dock.failedCount = 0
+		}
+		dock.prevTime = nowTime
 		return
 	}
 }

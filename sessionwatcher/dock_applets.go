@@ -23,9 +23,13 @@ package sessionwatcher
 
 import (
 	"os/exec"
+	"time"
 )
 
-type DockApplet struct{}
+type DockApplet struct{
+	failedCount int
+	prevTime int64
+}
 
 const (
 	_DOCK_APPLET_SENDER = "dde.dock.entry.AppletManager"
@@ -52,6 +56,13 @@ func (applet *DockApplet) restartDockApplet() {
 
 	if err := exec.Command(_DOCK_APPLET_CMD, "").Run(); err != nil {
 		logger.Warning("launch dde-dock-applets failed:", err)
+		nowTime := time.Now().Unix()
+		if nowTime - applet.prevTime < 6 {
+			applet.failedCount += 1
+		} else {
+			applet.failedCount = 0
+		}
+		applet.prevTime = nowTime
 		return
 	}
 }
