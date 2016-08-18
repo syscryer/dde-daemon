@@ -66,16 +66,19 @@ func main() {
 	}
 	dbus.DealWithUnhandledMessage()
 
-	dbus.SetAutoDestroyHandler(time.Second*5, func() bool {
-		if GetManager().writeStart {
-			select {
-			case <-GetManager().writeEnd:
-				return true
+	// search -d running as daemon
+	if len(os.Args) != 2 || os.Args[1] != "-d" {
+		dbus.SetAutoDestroyHandler(time.Second*5, func() bool {
+			if GetManager().writeStart {
+				select {
+				case <-GetManager().writeEnd:
+					return true
+				}
 			}
-		}
 
-		return true
-	})
+			return true
+		})
+	}
 
 	if err := dbus.Wait(); err != nil {
 		logger.Warning("Search lost dbus:", err)
