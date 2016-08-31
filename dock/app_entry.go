@@ -241,11 +241,15 @@ func (entry *AppEntry) attachWindow(winInfo *WindowInfo) {
 func (entry *AppEntry) detachWindow(winInfo *WindowInfo) {
 	win := winInfo.window
 	if _, ok := entry.windows[win]; ok {
-		if len(entry.windows) > 1 {
-			// switch current to next window
-			entry.setLeader(entry.findNextLeader())
-		}
 		delete(entry.windows, win)
+		if len(entry.windows) == 0 {
+			return
+		}
+		for _, winInfo := range entry.windows {
+			// select first
+			entry.setLeader(winInfo.window)
+			break
+		}
 	}
 }
 
