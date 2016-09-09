@@ -26,6 +26,7 @@ import (
 	. "pkg.deepin.io/lib/gettext"
 	"pkg.deepin.io/lib/log"
 	"pkg.deepin.io/lib/proxy"
+	"syscall"
 
 	"os"
 	"time"
@@ -46,6 +47,12 @@ func runMainLoop() {
 	go glib.StartLoop()
 
 	logger.Info("initialize done")
+
+	if os.Getenv("DEEPIN_MLOCKALL") == "true" {
+		logger.Warning("call mlockall(MCL_CURRENT) to avoid swap")
+		syscall.Mlockall(syscall.MCL_CURRENT)
+	}
+
 	if err := dbus.Wait(); err != nil {
 		logger.Errorf("Lost dbus: %v", err)
 		os.Exit(-1)

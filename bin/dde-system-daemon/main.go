@@ -17,6 +17,7 @@ import "os"
 import _ "pkg.deepin.io/dde/daemon/accounts"
 import "pkg.deepin.io/dde/daemon/loader"
 import . "pkg.deepin.io/lib/gettext"
+import "syscall"
 
 var logger = log.NewLogger("daemon/dde-system-daemon")
 
@@ -38,6 +39,11 @@ func main() {
 	defer loader.StopAll()
 
 	dbus.DealWithUnhandledMessage()
+
+	if os.Getenv("DEEPIN_MLOCKALL") == "true" {
+		logger.Warning("call mlockall(MCL_CURRENT) to avoid swap")
+		syscall.Mlockall(syscall.MCL_CURRENT)
+	}
 
 	if err := dbus.Wait(); err != nil {
 		logger.Errorf("Lost dbus: %v", err)

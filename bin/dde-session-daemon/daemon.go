@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"os"
 	"sync"
+	"syscall"
 
 	"gir/gio-2.0"
 	"gir/glib-2.0"
@@ -34,6 +35,11 @@ func runMainLoop() {
 	dbus.DealWithUnhandledMessage()
 	listenDaemonSettings()
 	go glib.StartLoop()
+
+	if os.Getenv("DEEPIN_MLOCKALL") == "true" {
+		logger.Warning("call mlockall(MCL_CURRENT) to avoid swap")
+		syscall.Mlockall(syscall.MCL_CURRENT)
+	}
 
 	if err := dbus.Wait(); err != nil {
 		logger.Errorf("Lost dbus: %v", err)
