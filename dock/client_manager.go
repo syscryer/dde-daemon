@@ -1,6 +1,7 @@
 package dock
 
 import (
+	"dbus/com/deepin/dde/launcher"
 	"github.com/BurntSushi/xgb/xproto"
 	"github.com/BurntSushi/xgbutil"
 	"github.com/BurntSushi/xgbutil/ewmh"
@@ -67,7 +68,7 @@ func (m *ClientManager) IsLauncherShown() bool {
 func walkClientList(pre func(xproto.Window) bool) bool {
 	list, err := ewmh.ClientListGet(XU)
 	if err != nil {
-		logger.Debug("Can't get _NET_CLIENT_LIST", err)
+		logger.Warning("Can't get _NET_CLIENT_LIST", err)
 		return false
 	}
 
@@ -184,7 +185,7 @@ func isWindowOverlapDock(xid xproto.Window) bool {
 	win := xwindow.New(XU, xid)
 	rect, err := win.DecorGeometry()
 	if err != nil {
-		logger.Warningf("isWindowOverlapDock GetDecorGeometry of 0x%x failed: %s", xid, err)
+		logger.Warning(err)
 		return false
 	}
 
@@ -242,17 +243,32 @@ func (m *ClientManager) listenRootWindow() {
 			var err error
 			isLauncherShown = false
 			if activeWindow, err = ewmh.ActiveWindowGet(XU); err == nil {
-				// loop gets better performance than find_app_id_by_xid.
-				// setLeader/updateState will filter invalid xid.
-				for _, app := range ENTRY_MANAGER.runtimeApps {
-					app.setLeader(activeWindow)
-					app.updateState(activeWindow)
+				appId := find_app_id_by_xid(activeWindow,
+					DisplayModeType(setting.GetDisplayMode()))
+				logger.Debug("current active window:", appId)
+				if rApp, ok := ENTRY_MANAGER.runtimeApps[appId]; ok {
+					logger.Debug("find runtime app")
+					rApp.setLeader(activeWindow)
+					rApp.updateState(activeWindow)
 				}
 
-				if isDeepinLauncher(activeWindow) {
+				logger.Debug("active window is", appId)
+				if appId != DDELauncher {
+					LAUNCHER, err := launcher.NewLauncher(
+						"com.deepin.dde.launcher",
+						"/com/deepin/dde/launcher",
+					)
+					if err != nil {
+						logger.Debug(err)
+					} else {
+						LAUNCHER.Hide()
+						launcher.DestroyLauncher(LAUNCHER)
+					}
+				} else {
 					isLauncherShown = true
 				}
 
+				lastActive = appId
 				dbus.Emit(m, "ActiveWindowChanged", uint32(activeWindow))
 			}
 
