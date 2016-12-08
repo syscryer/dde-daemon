@@ -2,10 +2,16 @@ PREFIX = /usr
 GOPATH_DIR = gopath
 GOPKG_PREFIX = pkg.deepin.io/dde/daemon
 
+ARCH = $(shell uname -m)
+
 ifndef USE_GCCGO
 	GOLDFLAGS = -ldflags '-s -w'
 else
 	GOLDFLAGS = -s -w  -Os -O2
+endif
+
+ifneq ($(findstring $(ARCH), sw_64 alpha),)
+        GOLDFLAGS = -s -w  -Os -O2 -mieee
 endif
 
 ifdef GODEBUG
