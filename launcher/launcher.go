@@ -131,6 +131,7 @@ func (self *Launcher) GetDBusInfo() dbus.DBusInfo {
 
 // RequestUninstall 请求卸载程。
 func (self *Launcher) RequestUninstall(id string, purge bool) {
+	self.RequestRemoveFromDesktop(id)
 	go func(id ItemID) {
 		Log.Info("uninstall", id)
 		err := self.itemManager.UninstallItem(id, purge, time.Minute*20)
