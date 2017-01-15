@@ -24,11 +24,11 @@ import _ "pkg.linuxdeepin.com/dde-daemon/dock"
 import _ "pkg.linuxdeepin.com/dde-daemon/launcher"
 import _ "pkg.linuxdeepin.com/dde-daemon/keybinding"
 
-import _ "pkg.linuxdeepin.com/dde-daemon/dsc"
+//import _ "pkg.linuxdeepin.com/dde-daemon/dsc"
 import _ "pkg.linuxdeepin.com/dde-daemon/mpris"
 import _ "pkg.linuxdeepin.com/dde-daemon/systeminfo"
 
-import _ "pkg.linuxdeepin.com/dde-daemon/sessionwatcher"
+//import _ "pkg.linuxdeepin.com/dde-daemon/sessionwatcher"
 
 import "pkg.linuxdeepin.com/lib/glib-2.0"
 

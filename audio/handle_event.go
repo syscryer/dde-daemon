@@ -10,9 +10,9 @@ func (a *Audio) initEventHandlers() {
 		a.core.Connect(pulse.FacilitySource, func(e int, idx uint32) {
 			a.handleSourceEvent(e, idx)
 		})
-		a.core.Connect(pulse.FacilitySinkInput, func(e int, idx uint32) {
-			a.handleSinkInputEvent(e, idx)
-		})
+		//a.core.Connect(pulse.FacilitySinkInput, func(e int, idx uint32) {
+		//a.handleSinkInputEvent(e, idx)
+		//})
 		a.core.Connect(pulse.FacilityServer, func(e int, idx uint32) {
 			a.handleServerEvent()
 		})

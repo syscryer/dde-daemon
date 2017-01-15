@@ -43,10 +43,10 @@ var (
 		"dock",
 		"launcher",
 		"keybinding",
-		"dsc",
+		//"dsc",
 		"mpris",
 		"systeminfo",
-		"sessionwatcher",
+		//"sessionwatcher",
 	}
 
 	_daemonSettings = gio.NewSettings("com.deepin.dde.daemon")
