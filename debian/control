@@ -27,6 +27,7 @@ Build-Depends: debhelper (>= 9), golang-go,
  libfontconfig1-dev,
  libcanberra-dev,
  libinput-dev,
+ libbamf3-dev [mipsel mips64el],
  dde-api-dev (>=2.92.2),deepin-desktop-schemas,golang-gir-gudev-1.0-dev,
 Standards-Version: 3.9.5
 Homepage: http://www.deepin.com
@@ -48,11 +49,9 @@ Depends: ${shlibs:Depends},
  deepin-metacity,
  deepin-desktop-schemas (>= 2.91.2),
  mobile-broadband-provider-info,
- bamfdaemon,
- dde-polkit-agent
+ bamfdaemon
 Breaks: dde-daemon(<< 2.92.2), dde-workspace
-Conflicts: dde-workspace, lastore-daemon-migration
-Provides: lastore-daemon-migration
+Conflicts: dde-workspace
 Suggests: 
  systemd,
  network-manager-pptp,
