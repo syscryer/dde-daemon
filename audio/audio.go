@@ -74,19 +74,19 @@ func NewSinkInput(core *pulse.SinkInput) *SinkInput {
 func NewAudio(core *pulse.Context) *Audio {
 	a := &Audio{core: core}
 	a.MaxUIVolume = pulse.VolumeUIMax
-	a.siEventChan = make(chan func(), 10)
-	a.siPollerExit = make(chan struct{})
+	//a.siEventChan = make(chan func(), 10)
+	//a.siPollerExit = make(chan struct{})
 	a.update()
-	a.initEventHandlers()
+	//a.initEventHandlers()
 
 	a.setupMediaKeyMonitor()
-	go a.sinkInputPoller()
+	//go a.sinkInputPoller()
 
 	return a
 }
 
 func (a *Audio) destroy() {
-	close(a.siPollerExit)
+	//close(a.siPollerExit)
 	dbus.UnInstallObject(a)
 }
 
