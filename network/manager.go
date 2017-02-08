@@ -124,6 +124,7 @@ func (m *Manager) initManager() {
 	logger.Info("initialize network")
 	initDbusObjects()
 	disableNotify()
+	defer enableNotify()
 	m.config = newConfig()
 	m.switchHandler = newSwitchHandler(m.config)
 	m.dbusWatcher = newDbusWatcher(true)
@@ -152,8 +153,6 @@ func (m *Manager) initManager() {
 			enableNotify()
 		}
 	})
-
-	enableNotify()
 }
 
 func (m *Manager) destroyManager() {

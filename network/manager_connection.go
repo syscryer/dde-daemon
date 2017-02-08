@@ -302,6 +302,7 @@ func (m *Manager) DeleteConnection(uuid string) (err error) {
 	if err != nil {
 		return err
 	}
+	defer nmDestroySettingsConnection(conn)
 	return conn.Delete()
 }
 
@@ -341,6 +342,8 @@ func (m *Manager) doDisconnectDevice(devPath dbus.ObjectPath) (err error) {
 	if err != nil {
 		return
 	}
+	defer nmDestroyDevice(dev)
+
 	devState := dev.State.Get()
 	if isDeviceStateInActivating(devState) {
 		err = dev.Disconnect()

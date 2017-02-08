@@ -88,6 +88,8 @@ func mmGetModemDeviceIdentifier(modemPath dbus.ObjectPath) (devId string, err er
 	if err != nil {
 		return
 	}
+	defer modemmanager1.DestroyModem(modem)
+
 	devId = modem.DeviceIdentifier.Get()
 	return
 }
@@ -97,6 +99,8 @@ func mmGetModemDeviceSysPath(modemPath dbus.ObjectPath) (sysPath string, err err
 	if err != nil {
 		return
 	}
+	defer modemmanager1.DestroyModem(modem)
+
 	sysPath = modem.Device.Get()
 	return
 }

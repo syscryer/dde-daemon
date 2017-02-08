@@ -253,6 +253,7 @@ func (s *ConnectionSession) Save() (ok bool, err error) {
 			return false, err
 		}
 		err = nmConn.Update(s.data)
+		nmDestroySettingsConnection(nmConn)
 		if err != nil {
 			logger.Error(err)
 			return false, err

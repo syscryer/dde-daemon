@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"pkg.linuxdeepin.com/lib/dbus"
 	. "pkg.linuxdeepin.com/lib/gettext"
+	"runtime/debug"
 )
 
 type activeConnection struct {
@@ -133,6 +134,7 @@ func (m *Manager) initActiveConnectionManage() {
 				m.activeConnections[s.Path] = aconn
 			}
 			m.setPropActiveConnections()
+			debug.FreeOSMemory()
 		}
 	})
 
@@ -156,7 +158,9 @@ func (m *Manager) initActiveConnectionManage() {
 
 			// notification for vpn
 			if isVpnConnectionStateActivated(state) {
-				notifyVpnConnected(aconn.Id)
+				if reason != NM_VPN_CONNECTION_STATE_REASON_USER_DISCONNECTED {
+					notifyVpnConnected(aconn.Id)
+				}
 			} else if isVpnConnectionStateDeactivate(state) {
 				notifyVpnDisconnected(aconn.Id)
 			} else if isVpnConnectionStateFailed(state) {
@@ -191,6 +195,7 @@ func (m *Manager) newActiveConnection(path dbus.ObjectPath) (aconn *activeConnec
 	if err != nil {
 		return
 	}
+	defer nmDestroyActiveConnection(nmAConn)
 
 	aconn.State = nmAConn.State.Get()
 	aconn.Devices = nmAConn.Devices.Get()
@@ -231,6 +236,7 @@ func (m *Manager) GetActiveConnectionInfo() (acinfosJSON string, err error) {
 					acinfos = append(acinfos, info)
 				}
 			}
+			nmDestroyActiveConnection(nmAConn)
 		}
 	}
 	acinfosJSON, err = marshalJSON(acinfos)
@@ -248,16 +254,21 @@ func (m *Manager) doGetActiveConnectionInfo(apath, devPath dbus.ObjectPath) (aci
 	if err != nil {
 		return
 	}
+	defer nmDestroyActiveConnection(nmAConn)
+
 	nmConn, err := nmNewSettingsConnection(nmAConn.Connection.Get())
 	if err != nil {
 		return
 	}
+	defer nmDestroySettingsConnection(nmConn)
 
 	// device
 	nmDev, err := nmNewDevice(devPath)
 	if err != nil {
 		return
 	}
+	defer nmDestroyDevice(nmDev)
+
 	devType = getCustomDeviceType(nmDev.DeviceType.Get())
 	devIfc = nmDev.Interface.Get()
 
