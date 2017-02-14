@@ -5,7 +5,17 @@ export GOPATH := /usr/share/gocode
 %:
 	dh $@
 
-ifdef USE_GCCGO
+ifeq ($(DEB_BUILD_ARCH), mipsel)
+override_dh_auto_configure:
+	# mate-screenshot -a grab the area screen
+	sed -i 's|"deepin-screenshot"|"mate-screenshot -a"|g' misc/dde-daemon/keybinding/system_actions.json
+	# mate-screenshot grab the full screen
+	sed -i 's|"deepin-screenshot -f"|"mate-screenshot"|g' misc/dde-daemon/keybinding/system_actions.json
+	sed -i 's|deepin-screenshot|mate-screenshot|g' misc/dde-daemon/keybinding/system_actions.json
+	
+	dh_auto_configure
+
+else ifeq ($(DEB_BUILD_ARCH), sw_64)
 override_dh_auto_configure:
 	# mate-screenshot -a grab the area screen
 	sed -i 's|"deepin-screenshot"|"mate-screenshot -a"|g' misc/dde-daemon/keybinding/system_actions.json
@@ -18,4 +28,5 @@ override_dh_strip:
 	dh_strip
 override_dh_auto_test:
 	true
+
 endif
