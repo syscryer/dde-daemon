@@ -95,6 +95,7 @@ func (lang *LangSelector) Destroy() {
 }
 
 func sendNotify(icon, summary, body string) error {
+	return nil
 	notifier, err := notifications.NewNotifier(
 		"org.freedesktop.Notifications",
 		"/org/freedesktop/Notifications")

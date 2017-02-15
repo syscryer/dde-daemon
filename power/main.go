@@ -82,6 +82,7 @@ func NewPower() *Power {
 
 func sendNotify(icon, summary, body string) {
 	//TODO: close previous notification
+	return
 	if notifier != nil {
 		notifier.Notify("com.deepin.daemon.power", 0, icon, summary, body, nil, nil, 0)
 	} else {

@@ -37,6 +37,7 @@ const (
 )
 
 func notify(icon, summary, body string) {
+	return
 	notifier, err := notifications.NewNotifier(dbusNotifyDest, dbusNotifyPath)
 	if err != nil {
 		logger.Error(err)
