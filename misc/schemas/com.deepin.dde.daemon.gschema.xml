@@ -27,7 +27,7 @@
       <description></description>
     </key>
     <key type="b"  name="dsc">
-      <default>true</default>
+      <default>false</default>
       <summary></summary>
       <description></description>
     </key>
@@ -72,7 +72,7 @@
       <description></description>
     </key>
     <key type="b"  name="screenedge">
-      <default>true</default>
+      <default>false</default>
       <summary></summary>
       <description></description>
     </key>
@@ -82,7 +82,7 @@
       <description></description>
     </key>
     <key type="b"  name="sessionwatcher">
-      <default>true</default>
+      <default>false</default>
       <summary></summary>
       <description></description>
     </key>
