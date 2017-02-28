@@ -134,6 +134,8 @@ func (m *Manager) emitChanged(ids []string, event int32) {
 }
 
 func (m *Manager) isAutoMount() bool {
+	// file-manager to handle
+	return false
 	if m.setting == nil {
 		return false
 	}
@@ -141,6 +143,8 @@ func (m *Manager) isAutoMount() bool {
 }
 
 func (m *Manager) isAutoOpen() bool {
+	// file-manager to handle
+	return false
 	if m.setting == nil {
 		return false
 	}
