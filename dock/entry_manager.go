@@ -287,30 +287,8 @@ func entrySliceRemove(slice []*AppEntry, entry *AppEntry) []*AppEntry {
 
 func (m *EntryManager) identifyWindow(winInfo *WindowInfo) (string, *AppInfo) {
 	logger.Debugf("identifyWindow: window id: %v, window hash %v", winInfo.window, winInfo.innerId)
-	desktopHash := m.desktopWindowsMapCacheManager.GetKeyByValue(winInfo.innerId)
-	logger.Debug("identifyWindow: get desktop hash:", desktopHash)
-	var appInfo *AppInfo
-	if desktopHash != "" {
-		appInfo = m.desktopHashFileMapCacheManager.GetAppInfo(desktopHash)
-		logger.Debug("identifyWindow: get AppInfo by desktop hash:", appInfo)
-	}
-
-	if appInfo == nil {
-		// cache faild
-		if desktopHash != "" {
-			logger.Warning("winHash->DesktopHash success, but DesktopHash->appInfo fail")
-			m.desktopHashFileMapCacheManager.DeleteKey(desktopHash)
-			m.desktopWindowsMapCacheManager.DeleteKeyValue(desktopHash, winInfo.innerId)
-		}
-
-		var canCache bool
-		appInfo, canCache = m.getAppInfoFromWindow(winInfo)
-		logger.Debug("identifyWindow: getAppInfoFromWindow:", appInfo)
-		if appInfo != nil && canCache {
-			m.desktopWindowsMapCacheManager.AddKeyValue(appInfo.innerId, winInfo.innerId)
-			m.desktopHashFileMapCacheManager.SetKeyValue(appInfo.innerId, appInfo.GetFilePath())
-		}
-	}
+	appInfo, _ := m.getAppInfoFromWindow(winInfo)
+	logger.Debug("identifyWindow: getAppInfoFromWindow:", appInfo)
 
 	var entryInnerId string
 	if appInfo != nil {
@@ -321,8 +299,6 @@ func (m *EntryManager) identifyWindow(winInfo *WindowInfo) (string, *AppInfo) {
 		logger.Debug("Set entryInnerId to window hash")
 	}
 
-	m.desktopWindowsMapCacheManager.AutoSave()
-	m.desktopHashFileMapCacheManager.AutoSave()
 	return entryInnerId, appInfo
 }
 
@@ -530,7 +506,7 @@ func (m *EntryManager) getAppInfoFromWindow(winInfo *WindowInfo) (*AppInfo, bool
 		ai = NewAppInfo(gtkAppId)
 		if ai != nil {
 			logger.Debugf("Get AppInfo success gtk app id: %q", gtkAppId)
-			return ai, true
+			return ai, false
 		}
 	}
 
@@ -549,7 +525,27 @@ func (m *EntryManager) getAppInfoFromWindow(winInfo *WindowInfo) (*AppInfo, bool
 				ai = NewAppInfoFromFile(launchedDesktopFile)
 				if ai != nil {
 					logger.Debugf("Get AppInfo success pid equal launchedDesktopFile: %q", launchedDesktopFile)
-					return ai, true
+					return ai, false
+				}
+			}
+		}
+	}
+
+	// Cmdline-XWalk
+	logger.Debug("Try Cmdline-XWalk")
+	if winInfo.process != nil {
+		exeBase := filepath.Base(winInfo.process.exe)
+		args := winInfo.process.args
+		if exeBase == "xwalk" && len(args) > 0 {
+			lastArg := args[len(args)-1]
+			logger.Debugf("lastArg: %q", lastArg)
+
+			if filepath.Base(lastArg) == "manifest.json" {
+				appId := filepath.Base(filepath.Dir(lastArg))
+				ai = NewAppInfo(appId)
+				if ai != nil {
+					logger.Debugf("Get AppInfo success by Cmdline-XWalk %q", appId)
+					return ai, false
 				}
 			}
 		}
@@ -562,7 +558,7 @@ func (m *EntryManager) getAppInfoFromWindow(winInfo *WindowInfo) (*AppInfo, bool
 		ai = NewAppInfoFromFile(desktop)
 		if ai != nil {
 			logger.Debugf("Get AppInfo success bamf desktop: %q", desktop)
-			return ai, true
+			return ai, false
 		}
 	}
 
@@ -573,7 +569,7 @@ func (m *EntryManager) getAppInfoFromWindow(winInfo *WindowInfo) (*AppInfo, bool
 		ai = NewAppInfo(winGuessAppId)
 		if ai != nil {
 			logger.Debugf("Get AppInfo success winGuessAppId: %q", winGuessAppId)
-			return ai, true
+			return ai, false
 		}
 	}
 
